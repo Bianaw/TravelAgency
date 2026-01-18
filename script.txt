@@ -1,0 +1,396 @@
+/* =========================================================
+   TravelAgencyService - Database Script (SQL Server)
+   Creates: ASP.NET Identity tables + project tables
+   ========================================================= */
+
+SET ANSI_NULLS ON;
+SET QUOTED_IDENTIFIER ON;
+GO
+
+/* =========================
+   1) ASP.NET Identity tables
+   ========================= */
+
+IF OBJECT_ID(N'dbo.__EFMigrationsHistory', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.__EFMigrationsHistory (
+        MigrationId nvarchar(150) NOT NULL,
+        ProductVersion nvarchar(32) NOT NULL,
+        CONSTRAINT PK___EFMigrationsHistory PRIMARY KEY (MigrationId)
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetRoles', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetRoles (
+        Id nvarchar(450) NOT NULL,
+        [Name] nvarchar(256) NULL,
+        NormalizedName nvarchar(256) NULL,
+        ConcurrencyStamp nvarchar(max) NULL,
+        CONSTRAINT PK_AspNetRoles PRIMARY KEY (Id)
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetUsers', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetUsers (
+        Id nvarchar(450) NOT NULL,
+        UserName nvarchar(256) NULL,
+        NormalizedUserName nvarchar(256) NULL,
+        Email nvarchar(256) NULL,
+        NormalizedEmail nvarchar(256) NULL,
+        EmailConfirmed bit NOT NULL,
+        PasswordHash nvarchar(max) NULL,
+        SecurityStamp nvarchar(max) NULL,
+        ConcurrencyStamp nvarchar(max) NULL,
+        PhoneNumber nvarchar(max) NULL,
+        PhoneNumberConfirmed bit NOT NULL,
+        TwoFactorEnabled bit NOT NULL,
+        LockoutEnd datetimeoffset(7) NULL,
+        LockoutEnabled bit NOT NULL,
+        AccessFailedCount int NOT NULL,
+
+        -- Custom columns (as in your screenshot)
+        FirstName nvarchar(50) NULL,
+        LastName nvarchar(50) NULL,
+
+        CONSTRAINT PK_AspNetUsers PRIMARY KEY (Id)
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetRoleClaims', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetRoleClaims (
+        Id int IDENTITY(1,1) NOT NULL,
+        RoleId nvarchar(450) NOT NULL,
+        ClaimType nvarchar(max) NULL,
+        ClaimValue nvarchar(max) NULL,
+        CONSTRAINT PK_AspNetRoleClaims PRIMARY KEY (Id),
+        CONSTRAINT FK_AspNetRoleClaims_AspNetRoles_RoleId
+            FOREIGN KEY (RoleId) REFERENCES dbo.AspNetRoles (Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetUserClaims', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetUserClaims (
+        Id int IDENTITY(1,1) NOT NULL,
+        UserId nvarchar(450) NOT NULL,
+        ClaimType nvarchar(max) NULL,
+        ClaimValue nvarchar(max) NULL,
+        CONSTRAINT PK_AspNetUserClaims PRIMARY KEY (Id),
+        CONSTRAINT FK_AspNetUserClaims_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers (Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetUserLogins', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetUserLogins (
+        LoginProvider nvarchar(128) NOT NULL,
+        ProviderKey nvarchar(128) NOT NULL,
+        ProviderDisplayName nvarchar(max) NULL,
+        UserId nvarchar(450) NOT NULL,
+        CONSTRAINT PK_AspNetUserLogins PRIMARY KEY (LoginProvider, ProviderKey),
+        CONSTRAINT FK_AspNetUserLogins_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers (Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetUserRoles', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetUserRoles (
+        UserId nvarchar(450) NOT NULL,
+        RoleId nvarchar(450) NOT NULL,
+        CONSTRAINT PK_AspNetUserRoles PRIMARY KEY (UserId, RoleId),
+        CONSTRAINT FK_AspNetUserRoles_AspNetRoles_RoleId
+            FOREIGN KEY (RoleId) REFERENCES dbo.AspNetRoles (Id) ON DELETE CASCADE,
+        CONSTRAINT FK_AspNetUserRoles_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers (Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.AspNetUserTokens', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.AspNetUserTokens (
+        UserId nvarchar(450) NOT NULL,
+        LoginProvider nvarchar(128) NOT NULL,
+        [Name] nvarchar(128) NOT NULL,
+        [Value] nvarchar(max) NULL,
+        CONSTRAINT PK_AspNetUserTokens PRIMARY KEY (UserId, LoginProvider, [Name]),
+        CONSTRAINT FK_AspNetUserTokens_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers (Id) ON DELETE CASCADE
+    );
+END
+GO
+
+/* Identity Indexes (recommended) */
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_AspNetRoles_NormalizedName' AND object_id=OBJECT_ID('dbo.AspNetRoles'))
+    CREATE UNIQUE INDEX IX_AspNetRoles_NormalizedName ON dbo.AspNetRoles (NormalizedName) WHERE NormalizedName IS NOT NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='EmailIndex' AND object_id=OBJECT_ID('dbo.AspNetUsers'))
+    CREATE INDEX EmailIndex ON dbo.AspNetUsers (NormalizedEmail);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='UserNameIndex' AND object_id=OBJECT_ID('dbo.AspNetUsers'))
+    CREATE UNIQUE INDEX UserNameIndex ON dbo.AspNetUsers (NormalizedUserName) WHERE NormalizedUserName IS NOT NULL;
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_AspNetRoleClaims_RoleId' AND object_id=OBJECT_ID('dbo.AspNetRoleClaims'))
+    CREATE INDEX IX_AspNetRoleClaims_RoleId ON dbo.AspNetRoleClaims (RoleId);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_AspNetUserClaims_UserId' AND object_id=OBJECT_ID('dbo.AspNetUserClaims'))
+    CREATE INDEX IX_AspNetUserClaims_UserId ON dbo.AspNetUserClaims (UserId);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_AspNetUserLogins_UserId' AND object_id=OBJECT_ID('dbo.AspNetUserLogins'))
+    CREATE INDEX IX_AspNetUserLogins_UserId ON dbo.AspNetUserLogins (UserId);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_AspNetUserRoles_RoleId' AND object_id=OBJECT_ID('dbo.AspNetUserRoles'))
+    CREATE INDEX IX_AspNetUserRoles_RoleId ON dbo.AspNetUserRoles (RoleId);
+GO
+
+
+/* =========================
+   2) Project tables
+   ========================= */
+
+IF OBJECT_ID(N'dbo.TravelPackages', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TravelPackages (
+        Id int IDENTITY(1,1) NOT NULL,
+        Destination nvarchar(max) NOT NULL,
+        Country nvarchar(max) NOT NULL,
+        StartDate datetime2(7) NOT NULL,
+        EndDate datetime2(7) NOT NULL,
+        Price decimal(18,2) NOT NULL,
+        AvailableRooms int NOT NULL,
+        AgeLimit int NOT NULL,
+        Description nvarchar(2000) NOT NULL,
+        PackageType int NOT NULL,
+        Image nvarchar(max) NULL,
+        DiscountEnd datetime2(7) NULL,
+        DiscountStart datetime2(7) NULL,
+        OldPrice decimal(18,2) NULL,
+        IsVisible bit NOT NULL,
+        CONSTRAINT PK_TravelPackages PRIMARY KEY (Id)
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.TravelPackageImages', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TravelPackageImages (
+        Id int IDENTITY(1,1) NOT NULL,
+        TravelPackageId int NOT NULL,
+        Url nvarchar(500) NOT NULL,
+        CONSTRAINT PK_TravelPackageImages PRIMARY KEY (Id),
+        CONSTRAINT FK_TravelPackageImages_TravelPackages_TravelPackageId
+            FOREIGN KEY (TravelPackageId) REFERENCES dbo.TravelPackages(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_TravelPackageImages_TravelPackageId' AND object_id=OBJECT_ID('dbo.TravelPackageImages'))
+    CREATE INDEX IX_TravelPackageImages_TravelPackageId ON dbo.TravelPackageImages(TravelPackageId);
+GO
+
+
+IF OBJECT_ID(N'dbo.BookingRules', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.BookingRules (
+        Id int IDENTITY(1,1) NOT NULL,
+        LatestBookingDaysBeforeStart int NOT NULL,
+        CancellationDaysBeforeStart int NOT NULL,
+        ReminderDaysBeforeStart int NOT NULL,
+        MaxActiveBookings int NOT NULL,
+        CONSTRAINT PK_BookingRules PRIMARY KEY (Id)
+    );
+END
+GO
+
+IF OBJECT_ID(N'dbo.Bookings', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Bookings (
+        Id int IDENTITY(1,1) NOT NULL,
+        UserId nvarchar(450) NOT NULL,
+        TravelPackageId int NOT NULL,
+        CreatedAt datetime2(7) NOT NULL,
+        Status int NOT NULL,
+        PaidAt datetime2(7) NULL,
+        CancelledAt datetime2(7) NULL,
+        PaidAmount decimal(18,2) NULL,
+        PriceAtBooking decimal(18,2) NOT NULL,
+        ReminderSentAt datetime2(7) NULL,
+        RoomsCount int NOT NULL,
+        CONSTRAINT PK_Bookings PRIMARY KEY (Id),
+        CONSTRAINT FK_Bookings_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE CASCADE,
+        CONSTRAINT FK_Bookings_TravelPackages_TravelPackageId
+            FOREIGN KEY (TravelPackageId) REFERENCES dbo.TravelPackages(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_Bookings_UserId' AND object_id=OBJECT_ID('dbo.Bookings'))
+    CREATE INDEX IX_Bookings_UserId ON dbo.Bookings(UserId);
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_Bookings_TravelPackageId' AND object_id=OBJECT_ID('dbo.Bookings'))
+    CREATE INDEX IX_Bookings_TravelPackageId ON dbo.Bookings(TravelPackageId);
+GO
+
+
+IF OBJECT_ID(N'dbo.CartItems', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.CartItems (
+        Id int IDENTITY(1,1) NOT NULL,
+        UserId nvarchar(max) NOT NULL,          -- matches your screenshot
+        TravelPackageId int NOT NULL,
+        CreatedAt datetime2(7) NOT NULL,
+        Quantity int NOT NULL,
+        CONSTRAINT PK_CartItems PRIMARY KEY (Id),
+        CONSTRAINT FK_CartItems_TravelPackages_TravelPackageId
+            FOREIGN KEY (TravelPackageId) REFERENCES dbo.TravelPackages(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_CartItems_TravelPackageId' AND object_id=OBJECT_ID('dbo.CartItems'))
+    CREATE INDEX IX_CartItems_TravelPackageId ON dbo.CartItems(TravelPackageId);
+GO
+
+
+IF OBJECT_ID(N'dbo.ServiceReviews', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.ServiceReviews (
+        Id int IDENTITY(1,1) NOT NULL,
+        UserId nvarchar(450) NOT NULL,
+        Rating int NOT NULL,
+        Comment nvarchar(1000) NULL,
+        CreatedAt datetime2(7) NOT NULL,
+        CONSTRAINT PK_ServiceReviews PRIMARY KEY (Id),
+        CONSTRAINT FK_ServiceReviews_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Unique per user (as in your OnModelCreating)
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_ServiceReviews_UserId_UQ' AND object_id=OBJECT_ID('dbo.ServiceReviews'))
+    CREATE UNIQUE INDEX IX_ServiceReviews_UserId_UQ ON dbo.ServiceReviews(UserId);
+GO
+
+
+IF OBJECT_ID(N'dbo.TripReviews', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.TripReviews (
+        Id int IDENTITY(1,1) NOT NULL,
+        TravelPackageId int NOT NULL,
+        UserId nvarchar(450) NOT NULL,
+        Rating int NOT NULL,
+        Comment nvarchar(1000) NULL,
+        CreatedAt datetime2(7) NOT NULL,
+        CONSTRAINT PK_TripReviews PRIMARY KEY (Id),
+        CONSTRAINT FK_TripReviews_TravelPackages_TravelPackageId
+            FOREIGN KEY (TravelPackageId) REFERENCES dbo.TravelPackages(Id) ON DELETE CASCADE,
+        CONSTRAINT FK_TripReviews_AspNetUsers_UserId
+            FOREIGN KEY (UserId) REFERENCES dbo.AspNetUsers(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_TripReviews_TravelPackageId' AND object_id=OBJECT_ID('dbo.TripReviews'))
+    CREATE INDEX IX_TripReviews_TravelPackageId ON dbo.TripReviews(TravelPackageId);
+GO
+
+
+IF OBJECT_ID(N'dbo.WaitingListEntries', N'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.WaitingListEntries (
+        Id int IDENTITY(1,1) NOT NULL,
+        TravelPackageId int NOT NULL,
+        Email nvarchar(450) NOT NULL,
+        CreatedAt datetime2(7) NOT NULL,
+        Notified bit NOT NULL,
+        CONSTRAINT PK_WaitingListEntries PRIMARY KEY (Id),
+        CONSTRAINT FK_WaitingListEntries_TravelPackages_TravelPackageId
+            FOREIGN KEY (TravelPackageId) REFERENCES dbo.TravelPackages(Id) ON DELETE CASCADE
+    );
+END
+GO
+
+-- Unique (TravelPackageId, Email) as in your OnModelCreating
+IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name='IX_WaitingListEntries_Package_Email_UQ' AND object_id=OBJECT_ID('dbo.WaitingListEntries'))
+    CREATE UNIQUE INDEX IX_WaitingListEntries_Package_Email_UQ
+    ON dbo.WaitingListEntries(TravelPackageId, Email);
+GO
+
+
+/* =========================
+   3) Defaults + Seed data
+   ========================= */
+
+-- Defaults (safe): only add if columns exist and no default already
+IF OBJECT_ID('dbo.DF_Bookings_CreatedAt', 'D') IS NULL
+    ALTER TABLE dbo.Bookings ADD CONSTRAINT DF_Bookings_CreatedAt DEFAULT (SYSUTCDATETIME()) FOR CreatedAt;
+GO
+
+IF OBJECT_ID('dbo.DF_CartItems_CreatedAt', 'D') IS NULL
+    ALTER TABLE dbo.CartItems ADD CONSTRAINT DF_CartItems_CreatedAt DEFAULT (SYSUTCDATETIME()) FOR CreatedAt;
+GO
+
+IF OBJECT_ID('dbo.DF_TravelPackages_IsVisible', 'D') IS NULL
+    ALTER TABLE dbo.TravelPackages ADD CONSTRAINT DF_TravelPackages_IsVisible DEFAULT (1) FOR IsVisible;
+GO
+
+IF OBJECT_ID('dbo.DF_WaitingListEntries_CreatedAt', 'D') IS NULL
+    ALTER TABLE dbo.WaitingListEntries ADD CONSTRAINT DF_WaitingListEntries_CreatedAt DEFAULT (SYSUTCDATETIME()) FOR CreatedAt;
+GO
+
+IF OBJECT_ID('dbo.DF_WaitingListEntries_Notified', 'D') IS NULL
+    ALTER TABLE dbo.WaitingListEntries ADD CONSTRAINT DF_WaitingListEntries_Notified DEFAULT (0) FOR Notified;
+GO
+
+IF OBJECT_ID('dbo.DF_ServiceReviews_CreatedAt', 'D') IS NULL
+    ALTER TABLE dbo.ServiceReviews ADD CONSTRAINT DF_ServiceReviews_CreatedAt DEFAULT (SYSUTCDATETIME()) FOR CreatedAt;
+GO
+
+IF OBJECT_ID('dbo.DF_TripReviews_CreatedAt', 'D') IS NULL
+    ALTER TABLE dbo.TripReviews ADD CONSTRAINT DF_TripReviews_CreatedAt DEFAULT (SYSUTCDATETIME()) FOR CreatedAt;
+GO
+
+
+-- Seed BookingRules (only if empty)
+IF NOT EXISTS (SELECT 1 FROM dbo.BookingRules)
+BEGIN
+    INSERT INTO dbo.BookingRules (LatestBookingDaysBeforeStart, CancellationDaysBeforeStart, ReminderDaysBeforeStart, MaxActiveBookings)
+    VALUES (0, 5, 5, 3);
+END
+GO
+
+-- Seed a few realistic TravelPackages (only if empty)
+IF NOT EXISTS (SELECT 1 FROM dbo.TravelPackages)
+BEGIN
+    INSERT INTO dbo.TravelPackages
+        (Destination, Country, StartDate, EndDate, Price, AvailableRooms, AgeLimit, Description, PackageType, Image, DiscountStart, DiscountEnd, OldPrice, IsVisible)
+    VALUES
+        (N'Barcelona Food & Beach', N'Spain', '2026-06-10', '2026-06-15', 2190.00, 12, 12,
+         N'Taste your way through Barcelona with tapas tours, market visits, and relaxing afternoons by the Mediterranean. 🏨 Hotel: 4★ beachfront stay with breakfast and easy metro access.',
+         0, NULL, NULL, NULL, NULL, 1),
+
+        (N'Canada Rockies Roadtrip – Banff & Jasper', N'Canada', '2026-07-05', '2026-07-12', 4890.00, 8, 10,
+         N'An epic scenic road trip through turquoise lakes, glacier viewpoints, and mountain towns. 🏨 Hotel: 4★ lodge-style stay near Banff with great mountain views.',
+         1, NULL, NULL, NULL, NULL, 1);
+END
+GO
