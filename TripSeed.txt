@@ -1,0 +1,102 @@
+/* =========================================================
+   TravelAgencyService - Seed TravelPackages (SQL Server)
+   Inserts realistic sample trips into dbo.TravelPackages
+   ========================================================= */
+
+SET NOCOUNT ON;
+GO
+
+-- Insert only if table is empty (safe)
+IF NOT EXISTS (SELECT 1 FROM dbo.TravelPackages)
+BEGIN
+    INSERT INTO dbo.TravelPackages
+        (Destination, Country, StartDate, EndDate, Price, AvailableRooms, AgeLimit, Description, PackageType, Image, DiscountStart, DiscountEnd, OldPrice, IsVisible)
+    VALUES
+    (N'Dead Sea Relax Getaway', N'Israel', '2026-03-10', '2026-03-13', 1290.00, 18, 12,
+     N'A calm wellness escape by the Dead Sea: spa access, sunrise yoga, and a full-day floating experience. 🏨 Hotel: 4★ resort with sea-view rooms and breakfast included.',
+     2, NULL, NULL, NULL, NULL, 1),
+
+    (N'Rome Ancient Wonders', N'Italy', '2026-04-05', '2026-04-10', 2390.00, 14, 10,
+     N'Walk through history: Colosseum tour, Vatican Museums, and hidden piazzas with local food tastings. 🏨 Hotel: 4★ central stay near major attractions.',
+     0, NULL, NULL, NULL, NULL, 1),
+
+    (N'Kyoto & Nara Tradition', N'Japan', '2026-04-18', '2026-04-25', 5990.00, 10, 12,
+     N'Temple visits, tea ceremony, bamboo forest walk, and a day trip to Nara’s famous deer park. 🏨 Hotel: 4★ ryokan-style experience + modern Kyoto hotel.',
+     1, NULL, NULL, NULL, NULL, 1),
+
+    (N'Iceland Northern Lights Quest', N'Iceland', '2026-02-12', '2026-02-18', 6790.00, 9, 12,
+     N'Chase the aurora with guided night tours, Blue Lagoon, waterfalls and black-sand beaches. 🏨 Hotel: 4★ Reykjavik stay with northern-lights wake-up calls.',
+     1, NULL, NULL, NULL, NULL, 1),
+
+    (N'Canada Rockies Roadtrip – Banff & Jasper', N'Canada', '2026-07-05', '2026-07-12', 4890.00, 8, 10,
+     N'An epic scenic road trip through turquoise lakes, glacier viewpoints, and mountain towns. 🏨 Hotel: 4★ lodge-style stay near Banff with mountain views.',
+     1, NULL, NULL, NULL, NULL, 1),
+
+    (N'London Theatre & Museums', N'United Kingdom', '2026-05-20', '2026-05-25', 2790.00, 16, 10,
+     N'West End show night, British Museum, Tate Modern, and iconic walking tours. 🏨 Hotel: 4★ near the Underground for easy access.',
+     0, NULL, NULL, NULL, NULL, 1),
+
+    (N'Prague Old Town & Castle', N'Czech Republic', '2026-06-02', '2026-06-06', 2090.00, 15, 10,
+     N'Old Town charm, Charles Bridge sunrise, Prague Castle, and a traditional dinner cruise. 🏨 Hotel: 4★ boutique stay in the historic center.',
+     0, NULL, NULL, NULL, NULL, 1),
+
+    (N'Vienna Classical Weekend', N'Austria', '2026-06-12', '2026-06-15', 1990.00, 12, 12,
+     N'Concert evening, Schönbrunn Palace, café culture, and city highlights tour. 🏨 Hotel: 4★ elegant stay near the Ringstraße.',
+     0, NULL, NULL, NULL, NULL, 1),
+
+    (N'Santorini Sunset Dreams', N'Greece', '2026-08-10', '2026-08-15', 3290.00, 11, 12,
+     N'Whitewashed villages, sunset cruise, beach day, and local winery tasting. 🏨 Hotel: 4★ caldera-view stay with breakfast.',
+     2, NULL, NULL, NULL, NULL, 1),
+
+    (N'Thailand Islands Hop – Phuket & Krabi', N'Thailand', '2026-09-03', '2026-09-11', 4490.00, 13, 12,
+     N'Island hopping, snorkeling, limestone cliffs, and night markets. 🏨 Hotel: 4★ beachfront stays in Phuket and Krabi.',
+     2, NULL, NULL, NULL, NULL, 1),
+
+    (N'Orlando Theme Parks Family Fun', N'USA', '2026-07-20', '2026-07-27', 5590.00, 20, 5,
+     N'Family-friendly adventure: theme parks, water parks, and shopping outlets. 🏨 Hotel: 4★ family resort with pool and shuttle services.',
+     3, NULL, NULL, NULL, NULL, 1),
+
+    (N'New York City Explorer', N'USA', '2026-10-05', '2026-10-10', 3890.00, 18, 10,
+     N'Iconic skyline views, Broadway night, Central Park, and neighborhoods food tour. 🏨 Hotel: 4★ Manhattan stay close to major landmarks.',
+     0, NULL, NULL, NULL, NULL, 1),
+
+    (N'Marrakech Desert & Souks', N'Morocco', '2026-11-02', '2026-11-07', 2790.00, 12, 12,
+     N'Vibrant souks, riad experience, day trip to the Atlas Mountains, and a desert sunset excursion. 🏨 Hotel: 4★ riad + desert camp night.',
+     1, NULL, NULL, NULL, NULL, 1),
+
+    (N'Luxury Dubai Experience', N'United Arab Emirates', '2026-12-10', '2026-12-14', 3690.00, 16, 12,
+     N'Desert safari, Burj Khalifa visit, luxury shopping, and beach club day. 🏨 Hotel: 5★ premium stay with breakfast and spa access.',
+     2, NULL, NULL, NULL, NULL, 1),
+
+    (N'Tropical Paradise Getaway', N'Maldives', '2026-06-25', '2026-07-01', 9990.00, 6, 12,
+     N'Overwater villa vibes, snorkeling, sunset cruise, and spa treatments. 🏨 Hotel: 5★ island resort with half-board.',
+     2, NULL, NULL, NULL, NULL, 1),
+
+    -- Examples with discounts
+    (N'Romantic Paris Escape', N'France', '2026-05-10', '2026-05-15', 2590.00, 12, 12,
+     N'City of love: Eiffel Tower evening, Seine cruise, Montmartre walk, and pastry tasting. 🏨 Hotel: 4★ charming stay near central Paris.',
+     0, NULL, '2026-02-01', '2026-03-01', 2990.00, 1),
+
+    (N'Lake Bled Nature Escape', N'Slovenia', '2026-04-28', '2026-05-02', 1890.00, 14, 10,
+     N'Lake walks, island boat ride, nearby caves, and scenic viewpoints. 🏨 Hotel: 4★ lakeside stay with breakfast.',
+     1, NULL, '2026-01-20', '2026-02-20', 2090.00, 1),
+
+    (N'Swiss Alps Ski Week – Zermatt', N'Switzerland', '2026-01-18', '2026-01-25', 7490.00, 9, 12,
+     N'Ski week in Zermatt with stunning Matterhorn views, equipment rentals options, and après-ski evenings. 🏨 Hotel: 4★ alpine lodge near lifts.',
+     1, NULL, NULL, NULL, NULL, 1),
+
+    (N'Egypt Nile Cruise – Cairo to Luxor', N'Egypt', '2026-03-22', '2026-03-29', 4190.00, 10, 12,
+     N'Pyramids in Cairo, then a Nile cruise with guided temple visits from Luxor to Aswan. 🏨 Hotel: 4★ Cairo stay + 5★ cruise cabin.',
+     1, NULL, NULL, NULL, NULL, 1),
+
+    (N'Tokyo Culture Experience', N'Japan', '2026-09-18', '2026-09-24', 6290.00, 11, 12,
+     N'Shibuya & Shinjuku highlights, day trip options, street-food tour, and traditional neighborhoods exploration. 🏨 Hotel: 4★ central Tokyo stay.',
+     0, NULL, NULL, NULL, NULL, 1);
+
+    PRINT 'Seed inserted into dbo.TravelPackages successfully.';
+END
+ELSE
+BEGIN
+    PRINT 'dbo.TravelPackages already contains data. Seed skipped.';
+END
+GO
