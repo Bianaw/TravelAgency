@@ -30,3 +30,5 @@ Setup Instructions:
                               2-Create a new empty database.
                               3-Run the SQL script located in the repository (script.txt) to create all require tables.
      5-Run the project
+
+link to git_hup:https://github.com/Bianaw/TravelAgency.git
