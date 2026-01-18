@@ -1,0 +1,56 @@
+﻿@model IEnumerable<TravelAgencyService.Models.ApplicationUser>
+
+@{
+    ViewData["Title"] = "Manage Users";
+}
+
+<h1>Manage Users</h1>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Email</th>
+            <th>First Name</th>
+            <th>Last Name</th>
+            <th>Status</th>
+            <th style="width:260px;"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var u in Model)
+        {
+            var isLocked = u.LockoutEnd.HasValue && u.LockoutEnd.Value > DateTimeOffset.Now;
+
+            <tr>
+                <td>@u.Email</td>
+                <td>@u.FirstName</td>
+                <td>@u.LastName</td>
+                <td>
+                    @if (isLocked)
+                    {
+                        <span class="badge bg-danger">Locked</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-success">Active</span>
+                    }
+                </td>
+                <td class="d-flex gap-2">
+                    <form asp-action="ToggleLock" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button class="btn btn-warning btn-sm" type="submit">
+                            @(isLocked ? "Unlock" : "Lock")
+                        </button>
+                    </form>
+
+                    <form asp-action="DeleteUser" method="post" onsubmit="return confirm('Delete this user?');">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@u.Id" />
+                        <button class="btn btn-danger btn-sm" type="submit">Delete</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

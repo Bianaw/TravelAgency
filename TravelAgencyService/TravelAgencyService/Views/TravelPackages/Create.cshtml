@@ -1,0 +1,214 @@
+﻿@model TravelAgencyService.Models.TravelPackage
+
+@{
+    ViewData["Title"] = "Create";
+}
+
+<h1>Create</h1>
+
+<h4>TravelPackage</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" enctype="multipart/form-data">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <div class="form-group">
+                <label asp-for="Destination" class="control-label"></label>
+                <input asp-for="Destination" class="form-control" />
+                <span asp-validation-for="Destination" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Country" class="control-label"></label>
+                <input asp-for="Country" class="form-control" />
+                <span asp-validation-for="Country" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="StartDate" class="control-label"></label>
+                <input asp-for="StartDate" class="form-control" />
+                <span asp-validation-for="StartDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EndDate" class="control-label"></label>
+                <input asp-for="EndDate" class="form-control" />
+                <span asp-validation-for="EndDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Price" class="control-label"></label>
+                <input asp-for="Price" class="form-control" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="AvailableRooms" class="control-label"></label>
+                <input asp-for="AvailableRooms" class="form-control" />
+                <span asp-validation-for="AvailableRooms" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PackageType" class="control-label"></label>
+                <select asp-for="PackageType" class="form-control"
+                        asp-items="Html.GetEnumSelectList<TravelAgencyService.Models.PackageType>()">
+                    <option value="">-- Select package type --</option>
+                </select>
+                <span asp-validation-for="PackageType" class="text-danger"></span>
+            </div>
+
+
+            <div class="form-group">
+                <label asp-for="AgeLimit" class="control-label"></label>
+                <input asp-for="AgeLimit" class="form-control" />
+                <span asp-validation-for="AgeLimit" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label>Image</label>
+                <input type="file" name="imageFile" class="form-control" />
+            </div>
+
+            <div class="form-group">
+                <label asp-for="OldPrice" class="control-label"></label>
+                <input asp-for="OldPrice" class="form-control" />
+                <span asp-validation-for="OldPrice" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DiscountStart" class="control-label"></label>
+                <input asp-for="DiscountStart" class="form-control" />
+                <span asp-validation-for="DiscountStart" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DiscountEnd" class="control-label"></label>
+                <input asp-for="DiscountEnd" class="form-control" />
+                <span asp-validation-for="DiscountEnd" class="text-danger"></span>
+            </div>
+
+            <div class="form-group form-check">
+                <input asp-for="IsVisible" class="form-check-input" />
+                <label asp-for="IsVisible" class="form-check-label"></label>
+            </div>
+            <hr />
+            <h4>Package Images</h4>
+
+            <div class="row g-2 align-items-center">
+                <div class="col-md-8">
+                    <input type="file" id="tempImgFile" class="form-control" accept="image/*" />
+                </div>
+                <div class="col-md-4">
+                    <button type="button" id="btnAddTempImg" class="btn btn-primary w-100">Add Image</button>
+                </div>
+            </div>
+
+            <input type="hidden" id="tempImagesJson" name="tempImagesJson" value="[]" />
+
+            <div id="tempImgsWrap" class="d-flex flex-wrap gap-3 mt-3"></div>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+
+    
+
+        </form>
+
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        const fileInput = document.getElementById("tempImgFile");
+        const btnAdd = document.getElementById("btnAddTempImg");
+        const wrap = document.getElementById("tempImgsWrap");
+        const hidden = document.getElementById("tempImagesJson");
+
+        function getList() {
+            try { return JSON.parse(hidden.value || "[]"); } catch { return []; }
+        }
+        function setList(list) {
+            hidden.value = JSON.stringify(list);
+        }
+
+        function render() {
+            const list = getList();
+            wrap.innerHTML = "";
+
+            list.forEach(item => {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.style.width = "220px";
+
+                card.innerHTML = `
+                    <img src="${item.url}" class="card-img-top" style="height:140px; object-fit:cover;" />
+                    <div class="card-body p-2">
+                        <button type="button" class="btn btn-danger btn-sm w-100">Delete</button>
+                    </div>
+                `;
+
+                card.querySelector("button").addEventListener("click", async () => {
+                    const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+                    await fetch('@Url.Action("DeleteTemp", "TravelPackageImages")', {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                            "RequestVerificationToken": token
+                        },
+                        body: new URLSearchParams({ fileName: item.fileName })
+                    });
+
+                    const newList = getList().filter(x => x.fileName !== item.fileName);
+                    setList(newList);
+                    render();
+                });
+
+                wrap.appendChild(card);
+            });
+        }
+
+        btnAdd.addEventListener("click", async () => {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert("Choose an image first.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const fd = new FormData();
+            fd.append("file", file);
+
+            const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+
+            const res = await fetch('@Url.Action("UploadTemp", "TravelPackageImages")', {
+                method: "POST",
+                headers: { "RequestVerificationToken": token },
+                body: fd
+            });
+
+            if (!res.ok) {
+                const txt = await res.text();
+                alert("Upload failed: " + txt);
+                return;
+            }
+
+            const data = await res.json(); // { fileName, url }
+            const list = getList();
+            list.push(data);
+            setList(list);
+
+            fileInput.value = "";
+            render();
+        });
+
+        render();
+    </script>
+}
+

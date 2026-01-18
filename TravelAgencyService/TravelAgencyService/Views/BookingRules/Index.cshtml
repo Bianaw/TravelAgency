@@ -1,0 +1,46 @@
+﻿@model TravelAgencyService.Models.BookingRule
+
+@{
+    ViewData["Title"] = "Booking Rules";
+}
+
+<h1>Booking Rules</h1>
+
+@if (TempData["RuleMsg"] != null)
+{
+    <div class="alert alert-success">@TempData["RuleMsg"]</div>
+}
+
+<form asp-action="Save" method="post">
+    @Html.AntiForgeryToken()
+
+    <div class="mb-3">
+        <label class="form-label">Latest booking allowed (days before trip start)</label>
+        <input asp-for="LatestBookingDaysBeforeStart" class="form-control" />
+        <span asp-validation-for="LatestBookingDaysBeforeStart" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Cancellation allowed (days before trip start)</label>
+        <input asp-for="CancellationDaysBeforeStart" class="form-control" />
+        <span asp-validation-for="CancellationDaysBeforeStart" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Reminder (days before trip start)</label>
+        <input asp-for="ReminderDaysBeforeStart" class="form-control" />
+        <span asp-validation-for="ReminderDaysBeforeStart" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Max active bookings per user</label>
+        <input asp-for="MaxActiveBookings" class="form-control" />
+        <span asp-validation-for="MaxActiveBookings" class="text-danger"></span>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Save Rules</button>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

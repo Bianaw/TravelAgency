@@ -1,0 +1,524 @@
+/* =========================
+   TravelAgencyService - site.css (FULL)
+   Modern TravelHub style + safe defaults
+   ========================= */
+
+/* ---- Base ---- */
+:root {
+    --th-primary: #0d6efd;
+    --th-primary-2: #1d4ed8;
+    --th-text: #1f2937;
+    --th-muted: #6b7280;
+    --th-border: #e5e7eb;
+    --th-bg: #ffffff;
+    --th-soft: #f8fafc;
+    --th-shadow: 0 10px 30px rgba(0,0,0,.08);
+    --th-radius: 16px;
+}
+
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    color: var(--th-text);
+    background: var(--th-bg);
+}
+
+/* Links */
+a {
+    color: var(--th-primary);
+    text-decoration: none;
+}
+
+    a:hover {
+        color: #0b5ed7;
+        text-decoration: none;
+    }
+
+/* Improve Bootstrap default feel */
+.btn {
+    border-radius: 12px;
+}
+
+.btn-primary {
+    box-shadow: 0 8px 18px rgba(13,110,253,.25);
+}
+
+.btn-outline-primary {
+    border-width: 2px;
+}
+
+.form-control, .form-select {
+    border-radius: 12px;
+}
+
+/* Cards global */
+.card {
+    border-radius: var(--th-radius);
+}
+
+/* ---- Header / Navbar (Layout) ---- */
+.app-header .navbar-brand {
+    color: var(--th-primary);
+}
+
+.brand-text {
+    letter-spacing: 0.2px;
+}
+
+.app-header .nav-link {
+    color: #334155 !important;
+    font-weight: 500;
+    padding: 8px 10px;
+    border-radius: 10px;
+}
+
+    .app-header .nav-link:hover {
+        background: rgba(13,110,253,0.08);
+        color: var(--th-primary) !important;
+    }
+
+/* Make Login/Register button-like (works even if markup differs) */
+.app-header .navbar-nav .nav-item a.btn,
+.app-header a.nav-link.btn,
+.app-header a.btn-primary,
+.app-header .navbar-nav .nav-link.btn {
+    border-radius: 999px;
+}
+
+/* ---- Footer (Layout) ---- */
+.app-footer .footer-cta {
+    background: linear-gradient(135deg, var(--th-primary), var(--th-primary-2));
+}
+
+.app-footer .footer-bottom {
+    background: #fff;
+}
+
+/* =========================
+   Home page (TravelHub)
+   ========================= */
+
+.th-hero {
+    min-height: 80vh;
+    padding: 72px 0 60px;
+    background: linear-gradient(135deg, var(--th-primary), var(--th-primary-2));
+    display: flex;
+    align-items: center;
+}
+
+.th-hero-title {
+    font-size: 56px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    margin-bottom: 12px;
+}
+
+.th-hero-sub {
+    font-size: 16px;
+    opacity: .92;
+    margin-bottom: 28px;
+}
+
+.th-search {
+    background: #fff;
+    border-radius: 16px;
+    padding: 18px;
+    max-width: 980px;
+    margin: 0 auto;
+    box-shadow: var(--th-shadow);
+}
+
+.th-btn-lg {
+    padding: 12px 18px;
+    border-radius: 12px;
+}
+
+.th-stat {
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.18);
+    border-radius: 16px;
+    padding: 14px 16px;
+    text-align: left;
+}
+
+.th-stat-label {
+    font-size: 13px;
+    opacity: .9;
+}
+
+.th-stat-value {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.th-stat-small {
+    font-weight: 600;
+    font-size: 16px;
+    opacity: .9;
+}
+
+.th-stat-muted {
+    font-size: 12px;
+    opacity: .85;
+}
+
+/* Sections */
+.th-section-title {
+    font-size: 36px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+/* Trip cards */
+.th-trip-card {
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--th-shadow);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+    .th-trip-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 40px rgba(0,0,0,.12);
+    }
+
+.th-trip-img {
+    height: 220px;
+    background-size: cover;
+    background-position: center;
+}
+
+/* Images (safe defaults – used in Home sample cards) */
+.th-img-1 {
+    background-image: url("https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1600&q=60");
+}
+
+.th-img-2 {
+    background-image: url("https://images.unsplash.com/photo-1502602898657-3e91760cbb34?auto=format&fit=crop&w=1600&q=60");
+}
+
+.th-img-3 {
+    background-image: url("https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=1600&q=60");
+}
+
+.th-sale {
+    background: #ef4444 !important;
+    border-radius: 999px;
+    padding: 6px 10px;
+}
+
+.th-price {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--th-primary);
+}
+
+.th-old {
+    margin-left: 8px;
+    font-size: 16px;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+/* Reviews */
+.th-card {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.06);
+}
+
+.th-review-card {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    position: relative;
+    min-height: 220px;
+}
+
+.th-quote {
+    font-size: 46px;
+    color: var(--th-primary);
+    line-height: 1;
+    margin-bottom: 10px;
+}
+
+.th-stars {
+    font-size: 16px;
+}
+
+.th-star {
+    color: #cbd5e1;
+}
+
+    .th-star.on {
+        color: #f59e0b;
+    }
+
+.th-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 999px;
+    background: rgba(13,110,253,.12);
+    color: var(--th-primary);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+}
+
+/* Responsive for hero */
+@media (max-width: 991px) {
+    .th-hero-title {
+        font-size: 44px;
+    }
+}
+
+@media (max-width: 575px) {
+    .th-hero {
+        min-height: auto;
+        padding: 52px 0 42px;
+    }
+
+    .th-hero-title {
+        font-size: 34px;
+    }
+
+    .th-search {
+        padding: 14px;
+    }
+}
+
+/* =========================
+   Default ASP.NET / Bootstrap helper styles (safe)
+   ========================= */
+
+/* Validation */
+.field-validation-error {
+    color: #dc3545;
+}
+
+.input-validation-error {
+    border-color: #dc3545 !important;
+    box-shadow: 0 0 0 .2rem rgba(220,53,69,.15);
+}
+
+.validation-summary-errors {
+    color: #dc3545;
+}
+
+/* Footer (if some old pages still rely on .footer class) */
+.footer {
+    padding: 18px 0;
+}
+
+/* Tables */
+.table {
+    background: #fff;
+}
+
+    .table thead th {
+        font-weight: 700;
+    }
+
+/* Utility: nicer separators */
+hr {
+    border-top: 1px solid var(--th-border);
+    opacity: 1;
+}
+/* =========================
+   Trips (TravelHub style)
+   ========================= */
+
+.th-page-title {
+    font-size: 40px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+.th-filter-card {
+    border: 0;
+    border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,.06);
+    position: sticky;
+    top: 18px;
+}
+
+.th-empty {
+    border-radius: 18px;
+    padding: 22px;
+}
+
+.th-package-card {
+    border: 0;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,.08);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+    .th-package-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 40px rgba(0,0,0,.12);
+    }
+
+
+
+.th-img-fallback {
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+    color: #64748b;
+    font-weight: 700;
+    background: #f1f5f9;
+}
+
+.th-badge-sale {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ef4444 !important;
+    border-radius: 999px;
+    padding: 8px 12px;
+}
+
+.th-type {
+    background: rgba(13,110,253,.10) !important;
+    color: #0d6efd !important;
+    border-radius: 999px;
+    padding: 8px 10px;
+    font-weight: 700;
+}
+
+.th-meta {
+    border-top: 1px solid #eef2f7;
+    padding-top: 12px;
+}
+
+.th-meta-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 13px;
+}
+
+.th-price {
+    font-size: 22px;
+    font-weight: 800;
+    color: #0d6efd;
+}
+
+.th-old {
+    margin-left: 8px;
+    font-size: 14px;
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 600;
+}
+
+.th-desc {
+    font-size: 13px;
+    line-height: 1.4;
+    max-height: 54px;
+    overflow: hidden;
+}
+
+@media (max-width: 991px) {
+    .th-filter-card {
+        position: static;
+    }
+}
+
+
+.th-old {
+    text-decoration: line-through;
+    color: #94a3b8;
+    font-weight: 600;
+    font-size: 14px;
+    margin-left: 8px;
+}
+
+.th-offers {
+    background: #fff3f0;
+    padding: 60px 0;
+    border-radius: 0;
+}
+
+.pkg-gallery {
+    max-width: 650px;
+    margin: 0 auto;
+}
+
+.pkg-main {
+    width: 100%;
+    border-radius: 18px;
+    overflow: hidden;
+    background: #f3f4f6;
+    box-shadow: 0 8px 24px rgba(0,0,0,.08);
+}
+
+    .pkg-main img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16 / 9;
+        object-fit: cover;
+        display: block;
+    }
+
+
+.pkg-thumbs {
+    margin-top: 14px;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.pkg-thumb {
+    border: 2px solid transparent;
+    background: transparent;
+    padding: 0;
+    border-radius: 12px;
+    cursor: pointer;
+    flex: 0 0 auto;
+}
+
+    .pkg-thumb img {
+        width: 78px;
+        height: 60px;
+        border-radius: 12px;
+        object-fit: cover;
+        display: block;
+    }
+
+
+    .pkg-thumb.active {
+        border-color: #0d6efd;
+    }
+
+.pkg-upload-row .btn {
+    min-width: 260px;
+    height: 46px;
+    border-radius: 14px;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(13,110,253,.25);
+}
+
+.pkg-upload-row .form-control {
+    height: 46px;
+    border-radius: 14px;
+}
+
+

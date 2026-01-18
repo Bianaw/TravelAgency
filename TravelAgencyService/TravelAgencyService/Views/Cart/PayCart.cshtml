@@ -1,0 +1,87 @@
+﻿@model List<TravelAgencyService.Models.Booking>
+@using System.Globalization
+@{
+    ViewData["Title"] = "Pay Cart";
+    var il = CultureInfo.GetCultureInfo("he-IL");
+    var total = (decimal)(ViewBag.Total ?? 0m);
+    var ids = (string)(ViewBag.Ids ?? "");
+}
+
+<h2>Pay for Cart</h2>
+
+@if (TempData["Msg"] != null)
+{
+    <div class="alert alert-danger">@TempData["Msg"]</div>
+}
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Trip</th>
+            <th>Dates</th>
+            <th>Rooms</th>
+            <th>Amount</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var b in Model)
+        {
+            <tr>
+                <td>@b.TravelPackage?.Destination (@b.TravelPackage?.Country)</td>
+                <td>@b.TravelPackage?.StartDate.ToString("dd/MM/yyyy") - @b.TravelPackage?.EndDate.ToString("dd/MM/yyyy")</td>
+                <td>@b.RoomsCount</td>
+                <td>
+                    @((b.PriceAtBooking * b.RoomsCount).ToString("C", il))
+                    <div class="small text-muted">@b.PriceAtBooking.ToString("C", il) × @b.RoomsCount</div>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h4>Total: @total.ToString("C", il)</h4>
+
+<hr />
+
+<form asp-action="PayCart" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="ids" value="@ids" />
+
+    <div class="row g-2">
+        <div class="col-md-4">
+            <label class="form-label">Card Number</label>
+            <input class="form-control" name="cardNumber" placeholder="16 digits" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Exp (MM/YY)</label>
+            <input class="form-control" name="exp" placeholder="MM/YY" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">CVV</label>
+            <input class="form-control" name="cvv" placeholder="3 digits" required />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">ID Number</label>
+            <input class="form-control" name="idNumber" placeholder="9 digits" required />
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label">Prefix</label>
+            <select class="form-select" name="phonePrefix" required>
+                <option value="050">050</option>
+                <option value="052">052</option>
+                <option value="053">053</option>
+                <option value="054">054</option>
+                <option value="055">055</option>
+                <option value="058">058</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Phone</label>
+            <input class="form-control" name="phoneRest" placeholder="7 digits" required />
+        </div>
+    </div>
+
+    <button class="btn btn-success mt-3">Pay</button>
+</form>

@@ -1,0 +1,365 @@
+﻿using System.Security.Claims;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TravelAgencyService.Data;
+using TravelAgencyService.Models;
+using TravelAgencyService.Services;
+
+
+
+
+namespace TravelAgencyService.Controllers
+{
+    [Authorize]
+    public class CartController : Controller
+    {
+        private readonly ApplicationDbContext _context;
+        private readonly IEmailSender _emailSender;
+
+        public CartController(ApplicationDbContext context, IEmailSender emailSender)
+        {
+            _context = context;
+            _emailSender = emailSender;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var items = await _context.CartItems
+                .Include(c => c.TravelPackage)
+                .Where(c => c.UserId == userId)
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync();
+
+            return View(items);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Add(int packageId, int qty, string? returnUrl = null)
+        {
+            qty = Math.Max(1, qty);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var pkg = await _context.TravelPackages.FirstOrDefaultAsync(p => p.Id == packageId);
+            if (pkg == null) return NotFound();
+
+            if (pkg.AvailableRooms < qty)
+            {
+                TempData["Msg"] = $"Not enough rooms. Only {pkg.AvailableRooms} left.";
+                return RedirectToAction("Details", "TravelPackages", new { id = packageId });
+            }
+
+            var item = await _context.CartItems
+                .FirstOrDefaultAsync(c => c.UserId == userId && c.TravelPackageId == packageId);
+
+            if (item == null)
+            {
+                _context.CartItems.Add(new CartItem
+                {
+                    UserId = userId,
+                    TravelPackageId = packageId,
+                    Quantity = qty
+                });
+            }
+            else
+            {
+                item.Quantity += qty;
+                if (item.Quantity > pkg.AvailableRooms)
+                    item.Quantity = pkg.AvailableRooms;
+            }
+
+            await _context.SaveChangesAsync();
+
+            TempData["Msg"] = "Added to cart.";
+
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return RedirectToAction("Details", "TravelPackages", new { id = packageId });
+        }
+
+       
+        [HttpGet]
+        public IActionResult PayBooking(int bookingId)
+        {
+            return RedirectToAction(nameof(PayCart), new { ids = bookingId.ToString() });
+        }
+
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Remove(int id)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var item = await _context.CartItems.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+            if (item != null)
+            {
+                _context.CartItems.Remove(item);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Clear()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var items = await _context.CartItems.Where(c => c.UserId == userId).ToListAsync();
+            if (items.Count > 0)
+            {
+                _context.CartItems.RemoveRange(items);
+                await _context.SaveChangesAsync();
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Checkout()
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var cartItems = await _context.CartItems
+                .Include(c => c.TravelPackage)
+                .Where(c => c.UserId == userId)
+                .ToListAsync();
+
+            if (cartItems.Count == 0)
+            {
+                TempData["Msg"] = "Cart is empty.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var rule = await _context.BookingRules.OrderByDescending(r => r.Id).FirstOrDefaultAsync();
+            var maxActive = rule?.MaxActiveBookings ?? 3;
+
+            var activeCount = await _context.Bookings.CountAsync(b => b.UserId == userId && b.Status != BookingStatus.Cancelled);
+            var tripsToBook = cartItems.Count; 
+            if (activeCount + tripsToBook > maxActive)
+            {
+                TempData["Msg"] = $"You can have up to {maxActive} active bookings. Remove items from cart.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            using var tx = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var createdBookingIds = new List<int>();
+
+                foreach (var ci in cartItems)
+                {
+                    var pkgId = ci.TravelPackageId;
+                    var pkg = await _context.TravelPackages.FirstAsync(p => p.Id == pkgId);
+
+                    if (pkg.AvailableRooms < ci.Quantity)
+                    {
+                        await tx.RollbackAsync();
+                        TempData["Msg"] = $"Trip '{pkg.Destination}' does not have enough rooms. Please adjust quantity.";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    var latestDays = rule?.LatestBookingDaysBeforeStart ?? 0;
+                    var daysToStart = (pkg.StartDate.Date - DateTime.Today).TotalDays;
+                    if (daysToStart < latestDays)
+                    {
+                        await tx.RollbackAsync();
+                        TempData["Msg"] = $"Trip '{pkg.Destination}' cannot be booked now (too close to start).";
+                        return RedirectToAction(nameof(Index));
+                    }
+
+                    pkg.AvailableRooms -= ci.Quantity;
+
+                    var booking = new Booking
+                    {
+                        UserId = userId,
+                        TravelPackageId = pkgId,
+                        RoomsCount = ci.Quantity,              //  מספר חדרים שנבחר בעגלה
+                        Status = BookingStatus.PendingPayment,
+                        PriceAtBooking = pkg.Price
+                    };
+
+                    _context.Bookings.Add(booking);
+                    await _context.SaveChangesAsync();
+                    createdBookingIds.Add(booking.Id);
+                }
+
+                _context.CartItems.RemoveRange(cartItems);
+                await _context.SaveChangesAsync();
+
+                await tx.CommitAsync();
+
+                return RedirectToAction(nameof(PayCart), new { ids = string.Join(",", createdBookingIds) });
+            }
+            catch
+            {
+                await tx.RollbackAsync();
+                throw;
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PayCart(string ids)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+            var arr = (ids ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => int.TryParse(x, out var n) ? n : 0)
+                .Where(n => n > 0)
+                .ToList();
+
+            var bookings = await _context.Bookings
+                .Include(b => b.TravelPackage)
+                .Where(b => b.UserId == userId && arr.Contains(b.Id) && b.Status == BookingStatus.PendingPayment)
+                .ToListAsync();
+
+            if (bookings.Count == 0) return RedirectToAction(nameof(Index));
+
+            ViewBag.Ids = ids;
+            ViewBag.Total = bookings.Sum(b => b.PriceAtBooking * b.RoomsCount);
+            return View(bookings);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> PayCart(string ids, string cardNumber, string exp, string cvv, string idNumber, string phonePrefix, string phoneRest)
+        {
+            
+
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+
+            var arr = (ids ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => int.TryParse(x, out var n) ? n : 0)
+                .Where(n => n > 0)
+                .ToList();
+
+            var bookings = await _context.Bookings
+                .Include(b => b.TravelPackage)
+                .Where(b => b.UserId == userId && arr.Contains(b.Id) && b.Status == BookingStatus.PendingPayment)
+                .ToListAsync();
+
+            if (bookings.Count == 0) return RedirectToAction(nameof(Index));
+
+            cardNumber = Regex.Replace(cardNumber ?? "", @"[\s-]", "");
+            cvv = (cvv ?? "").Trim();
+            exp = (exp ?? "").Trim();
+            idNumber = Regex.Replace(idNumber ?? "", @"[\s-]", "");
+            phonePrefix = (phonePrefix ?? "").Trim();
+            phoneRest = Regex.Replace(phoneRest ?? "", @"[\s-]", "");
+            var phone = phonePrefix + phoneRest;
+
+            var allowedPrefixes = new[] { "050", "052", "053", "054", "055", "058" };
+
+            if (!allowedPrefixes.Contains(phonePrefix) || !Regex.IsMatch(phoneRest, @"^\d{7}$"))
+                TempData["Msg"] = "Invalid phone number.";
+            else if (!Regex.IsMatch(cardNumber, @"^\d{16}$"))
+                TempData["Msg"] = "Card number must be exactly 16 digits.";
+            else if (!Regex.IsMatch(cvv, @"^\d{3}$"))
+                TempData["Msg"] = "CVV must be exactly 3 digits.";
+            else if (!Regex.IsMatch(exp, @"^(0[1-9]|1[0-2])\/\d{2}$"))
+                TempData["Msg"] = "Expiration must be in MM/YY format.";
+            else
+            {
+                try
+                {
+                    var parts = exp.Split('/');
+                    int mm = int.Parse(parts[0]);
+                    int yy = int.Parse(parts[1]) + 2000;
+                    var expDate = new DateTime(yy, mm, DateTime.DaysInMonth(yy, mm), 23, 59, 59);
+                    if (expDate < DateTime.Now)
+                        TempData["Msg"] = "Card is expired.";
+                }
+                catch { TempData["Msg"] = "Expiration is not valid."; }
+            }
+
+            if (TempData["Msg"] == null)
+            {
+                if (!Regex.IsMatch(idNumber, @"^\d{9}$") || !BookingsController_IsIsraeliIdValid(idNumber))
+                    TempData["Msg"] = "Invalid ID number.";
+                else if (!Regex.IsMatch(phone, @"^0\d{9}$"))
+                    TempData["Msg"] = "Phone must be 10 digits and start with 0.";
+            }
+
+            if (TempData["Msg"] != null)
+                return RedirectToAction(nameof(PayCart), new { ids });
+
+            var total = bookings.Sum(b => b.PriceAtBooking * b.RoomsCount);
+
+            foreach (var b in bookings)
+            {
+                b.Status = BookingStatus.Paid;
+                b.PaidAt = DateTime.Now;
+                b.PaidAmount = b.PriceAtBooking * b.RoomsCount;
+            }
+
+            await _context.SaveChangesAsync();
+            try
+            {
+                var toEmail = (await _context.Users
+                    .Where(u => u.Id == userId)
+                    .Select(u => u.Email)
+                    .FirstOrDefaultAsync())?.Trim();
+
+                if (!string.IsNullOrWhiteSpace(toEmail))
+                {
+                    var myBookingsUrl = Url.Action("MyBookings", "Bookings", null, Request.Scheme);
+
+                    // אם יש כמה הזמנות בתשלום אחד
+                    var tripsHtml = string.Join("", bookings.Select(b => $@"
+            <li>
+              <b>{b.TravelPackage?.Destination}</b> ({b.TravelPackage?.Country}) —
+              {b.TravelPackage?.StartDate:dd/MM/yyyy} - {b.TravelPackage?.EndDate:dd/MM/yyyy} —
+              Rooms: {b.RoomsCount} —
+              ₪{(b.PriceAtBooking * b.RoomsCount):0.00}
+            </li>
+        "));
+
+                    var subject = $"Payment confirmed - {bookings.Count} booking(s)";
+                    var body = $@"
+            <h2>Payment Successful ✅</h2>
+            <p>Thank you for your payment.</p>
+            <p><b>Total paid:</b> ₪{total:0.00}</p>
+
+            <h3>Your bookings:</h3>
+            <ul>{tripsHtml}</ul>
+
+            <hr/>
+            <p><a href='{myBookingsUrl}'>Open My Bookings</a></p>
+        ";
+
+                    await _emailSender.SendAsync(toEmail, subject, body);
+                }
+            }
+            catch
+            {
+            }
+
+
+            TempData["Msg"] = $"Payment successful! Total: ₪{total:0.00}";
+            return RedirectToAction("MyBookings", "Bookings");
+        }
+
+        private static bool BookingsController_IsIsraeliIdValid(string id)
+        {
+            int sum = 0;
+            for (int i = 0; i < 9; i++)
+            {
+                int digit = id[i] - '0';
+                int mult = (i % 2 == 0) ? 1 : 2;
+                int val = digit * mult;
+                if (val > 9) val -= 9;
+                sum += val;
+            }
+            return sum % 10 == 0;
+        }
+    }
+}

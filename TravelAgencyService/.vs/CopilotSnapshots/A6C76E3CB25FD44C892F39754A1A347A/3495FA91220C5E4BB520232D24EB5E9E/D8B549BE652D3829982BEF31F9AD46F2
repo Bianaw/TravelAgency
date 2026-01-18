@@ -1,0 +1,243 @@
+﻿@model TravelAgencyService.Models.TravelPackage
+
+@{
+    ViewData["Title"] = "Details";
+}
+
+<h1>Details</h1>
+
+<div>
+    <h4>TravelPackage</h4>
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Destination)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Destination)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Country)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Country)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.StartDate)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.StartDate)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.EndDate)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.EndDate)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Price)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Price)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.AvailableRooms)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.AvailableRooms)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.PackageType)
+        </dt>
+
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.PackageType)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.AgeLimit)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.AgeLimit)
+        </dd>
+        <dt class = "col-sm-2">
+            @Html.DisplayNameFor(model => model.Description)
+        </dt>
+        <dd class = "col-sm-10">
+            @Html.DisplayFor(model => model.Description)
+        </dd>
+        <dt class="col-sm-2">
+            Image
+        </dt>
+        <dd class="col-sm-10">
+            @if (!string.IsNullOrEmpty(Model.Image))
+            {
+                <img src="~/images/packages/@Model.Image"
+                     style="max-width:400px; border-radius:12px;" />
+            }
+        </dd>
+
+    </dl>
+    <hr />
+    <div id="rate">
+        <h4>Ratings</h4>
+
+        @if (TempData["Msg"] != null)
+        {
+            <div class="alert alert-info">@TempData["Msg"]</div>
+        }
+
+        @{
+            double avg = (double)(ViewBag.AvgRating ?? 0.0);
+            int count = (int)(ViewBag.ReviewsCount ?? 0);
+        }
+
+        <div class="mb-3">
+            <b>Average:</b> @avg.ToString("0.0") / 5
+            <span class="text-muted">(@count reviews)</span>
+        </div>
+
+        @if (User.Identity?.IsAuthenticated == true && (bool)(ViewBag.CanReview ?? false))
+        {
+            <div class="card p-3 mb-3">
+                <h5>Leave a review</h5>
+
+                <form asp-controller="TripReviews" asp-action="Create" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="packageId" value="@Model.Id" />
+
+                    <div class="mb-2">
+                        <label>Rating (1-5)</label>
+                        <select class="form-select" name="rating" required>
+                            <option value="">Choose</option>
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Very good</option>
+                            <option value="3">3 - Good</option>
+                            <option value="2">2 - Ok</option>
+                            <option value="1">1 - Bad</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-2">
+                        <label>Comment (optional)</label>
+                        <textarea class="form-control" name="comment" rows="3" maxlength="1000"></textarea>
+                    </div>
+
+                    <button class="btn btn-success" type="submit">Submit</button>
+                </form>
+            </div>
+        }
+    </div>
+    
+
+    @{
+        var recent = ViewBag.RecentReviews as List<TravelAgencyService.Models.TripReview>;
+    }
+
+    @if (recent != null && recent.Count > 0)
+    {
+        <h5>Recent reviews</h5>
+        <ul class="list-group">
+            @foreach (var r in recent)
+            {
+                <li class="list-group-item">
+                    <b>@(r.User != null ? $"{r.User.FirstName} {r.User.LastName}" : "User")</b>
+                    - <span>@r.Rating/5</span>
+                    <span class="text-muted">(@r.CreatedAt.ToString("dd/MM/yyyy"))</span>
+                    @if (!string.IsNullOrWhiteSpace(r.Comment))
+                    {
+                        <div class="mt-1">@r.Comment</div>
+                    }
+                </li>
+            }
+        </ul>
+    }
+    else
+    {
+        <div class="text-muted">No reviews yet.</div>
+    }
+
+</div>
+@if (TempData["WaitMsg"] != null)
+{
+    <div class="alert alert-info">
+        @TempData["WaitMsg"]
+    </div>
+}
+<h5>Waiting List</h5>
+
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <form asp-controller="WaitingList" asp-action="Join" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="packageId" value="@Model.Id" />
+
+        <div class="text-muted">
+            We will use your account email: <b>@User.Identity.Name</b>
+        </div>
+
+        <button type="submit" class="btn btn-warning mt-2">
+            Join Waiting List
+        </button>
+    </form>
+}
+else
+{
+    <div class="d-flex gap-2">
+        <a class="btn btn-primary btn-sm"
+           asp-area="Identity"
+           asp-page="/Account/Login"
+           asp-route-returnUrl="@Url.Action("Details","TravelPackages", new { id = Model.Id })">
+            Sign in
+        </a>
+
+        <a class="btn btn-outline-primary btn-sm"
+           asp-area="Identity"
+           asp-page="/Account/Register"
+           asp-route-returnUrl="@Url.Action("Details","TravelPackages", new { id = Model.Id })">
+            Register
+        </a>
+    </div>
+
+}
+
+
+
+    @if (User.Identity != null && User.Identity.IsAuthenticated)
+    {
+        <div class="d-flex gap-2 mt-2">
+
+            <!-- Book: נשאר באותו דף -->
+            <form asp-controller="Bookings" asp-action="Reserve" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="packageId" value="@Model.Id" />
+                <button class="btn btn-success" type="submit">Book</button>
+            </form>
+
+            <!-- Buy Now: מעביר לדף התשלום -->
+            <form asp-controller="Bookings" asp-action="Create" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="packageId" value="@Model.Id" />
+                <button class="btn btn-primary" type="submit">Buy Now</button>
+            </form>
+
+            <form asp-controller="Cart" asp-action="Add" method="post" class="m-0">
+                 @Html.AntiForgeryToken()
+                 <input type="hidden" name="packageId" value="@Model.Id" />
+                  <button class="btn btn-outline-primary" type="submit">Add to Cart</button>
+            </form>
+
+        </div>
+    }
+ 
+
+
+@* <div> *@
+@*     @if (User.IsInRole("Admin")) *@
+@*     { *@
+@*         <a asp-action="Edit" asp-route-id="@Model?.Id">Edit</a> *@
+@*         <span> | </span> *@
+@*     } *@
+
+@*     <a asp-action="Index">Back to List</a> *@
+
+@* </div> *@

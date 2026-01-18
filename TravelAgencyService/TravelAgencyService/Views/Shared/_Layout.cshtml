@@ -1,0 +1,169 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - TravelAgencyService</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/TravelAgencyService.styles.css" asp-append-version="true" />
+</head>
+
+<body>
+    <!-- ✅ Top Navbar -->
+    <header class="app-header">
+        <nav class="navbar navbar-expand-lg bg-white shadow-sm py-3">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
+                    <!-- Inline SVG icon (בלי ספריות חיצוניות) -->
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M2.5 19.5L21.5 12L2.5 4.5L3.8 10.3L14.2 12L3.8 13.7L2.5 19.5Z" fill="currentColor" />
+                    </svg>
+                    <span class="brand-text">TravelHub</span>
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar"
+                        aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="TravelPackages" asp-action="Index">Trips</a>
+                        </li>
+
+                        @if (User.Identity != null && User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Bookings" asp-action="MyBookings">My Bookings</a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="WaitingList" asp-action="AdminList">Waiting List</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="BookingRules" asp-action="Index">Booking Rules</a>
+                            </li>
+
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Admin" asp-action="Users">Users</a>
+                            </li>
+                        }
+
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Cart" asp-action="Index">Cart</a>
+                        </li>
+
+                        <li class="nav-item ms-lg-2">
+                            <partial name="_LoginPartial" />
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    @RenderSection("FullWidth", required: false)
+
+    <div class="container my-4">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="app-footer mt-5">
+        <div class="footer-cta text-center text-white">
+            <div class="container py-5">
+                <h2 class="mb-2">Ready to Start Your Journey?</h2>
+                <p class="mb-4 opacity-90">Browse our complete collection of travel packages and find your perfect adventure</p>
+                <a class="btn btn-light px-4" asp-controller="TravelPackages" asp-action="Index">Explore All Trips</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom border-top">
+            <div class="container py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <div class="text-muted small">© 2026 - TravelHub</div>
+                <a class="text-muted small" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            </div>
+        </div>
+    </footer>
+    @{
+        var returnUrl = Context.Request.Path + Context.Request.QueryString;
+        var isAuth = (User?.Identity?.IsAuthenticated == true);
+    }
+
+    <script>
+        window.TH_IS_AUTH = @(isAuth ? "true" : "false");
+        window.TH_RETURN_URL = "@returnUrl";
+    </script>
+
+    <div class="modal fade" id="roomsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Choose rooms</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="mb-2">
+                        <label class="form-label">How many rooms?</label>
+                        <input type="number" id="thRoomsQty" class="form-control" min="1" value="1" />
+                    </div>
+
+                    <div id="thRoomsMsg" class="small mt-2"></div>
+                </div>
+                
+
+
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" id="thRoomsContinue" disabled>Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="thFormCart" asp-controller="Cart" asp-action="Add" method="post" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="packageId" id="thCartPackageId" />
+        <input type="hidden" name="qty" id="thCartQty" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+    </form>
+
+    <form id="thFormReserve" asp-controller="Bookings" asp-action="Reserve" method="post" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="packageId" id="thReservePackageId" />
+        <input type="hidden" name="qty" id="thReserveQty" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+    </form>
+
+    <form id="thFormBuy" asp-controller="Bookings" asp-action="Create" method="post" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="packageId" id="thBuyPackageId" />
+        <input type="hidden" name="qty" id="thBuyQty" />
+        <input type="hidden" name="returnUrl" value="@returnUrl" />
+    </form>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+</html>
+
+
+
+
+

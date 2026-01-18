@@ -1,0 +1,358 @@
+﻿@using TravelAgencyService.Models
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Home";
+    int tripsCount = ViewBag.TripsCount ?? 0;
+    int reviewsCount = ViewBag.ServiceReviewsCount ?? 0;
+    double avg = (double)(ViewBag.ServiceAvgRating ?? 0.0);
+    var recent = ViewBag.ServiceRecent as List<ServiceReview> ?? new();
+    bool canLeave = (bool)(ViewBag.CanLeaveServiceReview ?? false); 
+    var popularTrips = ViewBag.PopularTrips as List<TravelPackage> ?? new();
+    var saleTrips = ViewBag.SaleTrips as List<TravelPackage> ?? new();
+    var avgRatings = ViewBag.TripAvgRatings as Dictionary<int, double> ?? new();
+    var reviewCounts = ViewBag.TripReviewCounts as Dictionary<int, int> ?? new();
+    var il = CultureInfo.GetCultureInfo("he-IL");  
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+
+}
+
+@section FullWidth {
+    <section class="th-hero">
+        <div class="container text-center text-white">
+            <h1 class="th-hero-title">Discover Your Next Adventure</h1>
+            <p class="th-hero-sub">
+                Explore amazing destinations around the world with our curated travel packages
+            </p>
+
+            <div class="th-search shadow">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Destination</label>
+                        <input class="form-control" placeholder="Where to?" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Check-in</label>
+                        <input type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted">Check-out</label>
+                        <input type="date" class="form-control" />
+                    </div>
+                    <div class="col-md-3 d-grid">
+                        <!-- אם תרצי אחר כך לחבר לחיפוש אמיתי - נחבר -->
+                        <a class="btn btn-primary th-btn-lg"
+                           asp-controller="TravelPackages" asp-action="Index">
+                            Search Trips
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center g-3 mt-4">
+                <div class="col-md-3">
+                    <div class="th-stat">
+                        <div class="th-stat-label">Trips available</div>
+                        <div class="th-stat-value">@tripsCount</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="th-stat">
+                        <div class="th-stat-label">Service rating</div>
+                        <div class="th-stat-value">@avg.ToString("0.0") <span class="th-stat-small">/ 5</span></div>
+                        <div class="th-stat-muted">(@reviewsCount reviews)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <a class="btn btn-outline-light th-btn-lg"
+                   asp-controller="TravelPackages" asp-action="Index">
+                    Browse Trips
+                </a>
+            </div>
+        </div>
+    </section>
+}
+
+<section class="my-5">
+    <div class="text-center mb-4">
+        <h2 class="th-section-title">Popular Trips</h2>
+        <p class="text-muted mb-0">Explore our most loved destinations chosen by travelers worldwide</p>
+    </div>
+    <div class="row g-4">
+        @foreach (var item in popularTrips)
+        {
+            var now = DateTime.Today;
+
+            bool discountActive =
+            item.OldPrice.HasValue &&
+            item.DiscountStart.HasValue &&
+            item.DiscountEnd.HasValue &&
+            now >= item.DiscountStart.Value.Date &&
+            now <= item.DiscountEnd.Value.Date;
+
+            var tripAvg = avgRatings.TryGetValue(item.Id, out var a) ? a : 0.0;
+            var tripCnt = reviewCounts.TryGetValue(item.Id, out var c) ? c : 0;
+
+            <div class="col-md-4">
+                <div class="card th-package-card h-100">
+                    <div class="th-package-img">
+                        @if (!string.IsNullOrEmpty(item.Image))
+                        {
+                            <img src="~/images/packages/@item.Image" alt="@item.Destination" />
+                        }
+                        else
+                        {
+                            <div class="th-img-fallback"><span>No image</span></div>
+                        }
+
+                        @if (discountActive)
+                        {
+                            <span class="badge th-badge-sale">Sale!</span>
+                        }
+                    </div>
+
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start gap-2">
+                            <div>
+                                <h5 class="mb-1">@item.Destination</h5>
+                                <div class="text-muted small">@item.Country</div>
+                            </div>
+                            <span class="badge th-type">@item.PackageType</span>
+                        </div>
+
+                        <div class="mt-3">
+                            @if (discountActive)
+                            {
+                                <div class="th-price">
+                                    @item.Price.ToString("C", il)
+                                    <span class="th-old">@item.OldPrice.Value.ToString("C", il)</span>
+                                </div>
+                                <div class="text-muted small">per person</div>
+                            }
+                            else
+                            {
+                                <div class="th-price">@item.Price.ToString("C", il)</div>
+                                <div class="text-muted small">per person</div>
+                            }
+                        </div>
+
+                        <div class="mt-2">
+                            @if (tripCnt == 0)
+                            {
+                                <span class="text-muted small">No reviews</span>
+                            }
+                            else
+                            {
+                                <span class="fw-semibold">@tripAvg.ToString("0.0") ★</span>
+                                <small class="text-muted">(@tripCnt)</small>
+                            }
+                        </div>
+
+                        <div class="mt-auto pt-3 d-flex gap-2">
+                            <a class="btn btn-outline-primary w-50"
+                               asp-controller="TravelPackages" asp-action="Details" asp-route-id="@item.Id">
+                                View Details
+                            </a>
+                            <button type="button" class="btn btn-primary w-50"
+                                    data-rooms-action="reserve"
+                                    data-package-id="@item.Id">
+                                Book Now
+                            </button>
+
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</section>
+
+<section class="my-5 th-offers">
+    <div class="text-center mb-4">
+        <h2 class="th-section-title">Limited Time Offers</h2>
+        <p class="text-muted mb-0">Don’t miss out on these amazing deals - book now and save big!</p>
+    </div>
+
+    @if (saleTrips.Count == 0)
+    {
+        <p class="text-muted text-center">No discounted trips right now.</p>
+    }
+    else
+    {
+        <div class="row g-4 justify-content-center">
+            @foreach (var item in saleTrips)
+            {
+                var tripAvg = avgRatings.TryGetValue(item.Id, out var a) ? a : 0.0;
+                var tripCnt = reviewCounts.TryGetValue(item.Id, out var c) ? c : 0;
+
+                <div class="col-md-3">
+                    <div class="card th-package-card h-100">
+                        <div class="th-package-img">
+                            @if (!string.IsNullOrEmpty(item.Image))
+                            {
+                                <img src="~/images/packages/@item.Image" alt="@item.Destination" />
+                            }
+                            else
+                            {
+                                <div class="th-img-fallback"><span>No image</span></div>
+                            }
+
+                            <span class="badge th-badge-sale">Sale!</span>
+                        </div>
+
+                        <div class="card-body d-flex flex-column">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <h6 class="mb-1">@item.Destination</h6>
+                                    <div class="text-muted small">@item.Country</div>
+                                </div>
+                                <span class="badge th-type">@item.PackageType</span>
+                            </div>
+
+                            <div class="mt-3">
+                                <div class="th-price">
+                                    @item.Price.ToString("C", il)
+                                    @if (item.OldPrice.HasValue)
+                                    {
+                                        <span class="th-old">@item.OldPrice.Value.ToString("C", il)</span>
+                                    }
+                                </div>
+                                <div class="text-muted small">per person</div>
+                            </div>
+
+                            <div class="mt-2">
+                                @if (tripCnt == 0)
+                                {
+                                    <span class="text-muted small">No reviews</span>
+                                }
+                                else
+                                {
+                                    <span class="fw-semibold">@tripAvg.ToString("0.0") ★</span>
+                                    <small class="text-muted">(@tripCnt)</small>
+                                }
+                            </div>
+
+                            <div class="mt-auto pt-3 d-flex gap-2">
+                                <a class="btn btn-outline-primary w-50"
+                                   asp-controller="TravelPackages" asp-action="Details" asp-route-id="@item.Id">
+                                    View Details
+                                </a>
+                                <button type="button" class="btn btn-primary w-50"
+                                        data-rooms-action="reserve"
+                                        data-package-id="@item.Id">
+                                    Book Now
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+
+<section class="my-5">
+    <div class="text-center mb-4">
+        <h2 class="th-section-title">What Users Think About Our Service</h2>
+        <p class="text-muted mb-0">Real experiences from real travelers</p>
+    </div>
+
+    @if (TempData["SrvMsg"] != null)
+    {
+        <div class="alert alert-info">@TempData["SrvMsg"]</div>
+    }
+
+    @if (User.Identity?.IsAuthenticated == true && canLeave)
+    {
+        <div class="card th-card p-4 mb-4">
+            <h5 class="mb-3">Leave feedback</h5>
+
+            <form asp-controller="ServiceReviews" asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="mb-3">
+                    <label class="form-label">Rating</label>
+                    <select class="form-select" name="rating" required>
+                        <option value="">Choose</option>
+                        <option value="5">5 - Excellent</option>
+                        <option value="4">4 - Very good</option>
+                        <option value="3">3 - Good</option>
+                        <option value="2">2 - OK</option>
+                        <option value="1">1 - Bad</option>
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Comment (optional)</label>
+                    <textarea class="form-control" name="comment" rows="3" maxlength="1000"></textarea>
+                </div>
+
+                <button class="btn btn-success th-btn-lg" type="submit">Submit</button>
+            </form>
+        </div>
+    }
+    else if (User.Identity?.IsAuthenticated == true && !canLeave)
+    {
+        <div class="alert alert-secondary mb-4">
+            You can leave feedback after a paid booking, and only once.
+        </div>
+    }
+
+    @if (recent.Count == 0)
+    {
+        <p class="text-muted text-center">No feedback yet.</p>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var r in recent)
+            {
+                var name = r.User == null ? "User" : $"{r.User.FirstName} {r.User.LastName}".Trim();
+
+                <div class="col-md-3">
+                    <div class="card th-review-card h-100 p-4">
+                        <div class="th-quote">“</div>
+
+                        <div class="th-stars mb-2">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                if (i <= r.Rating)
+                                {
+                                    <span class="th-star on">★</span>
+                                }
+                                else
+                                {
+                                    <span class="th-star">★</span>
+                                }
+                            }
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(r.Comment))
+                        {
+                            <div class="mb-3 text-muted">@r.Comment</div>
+                        }
+                        else
+                        {
+                            <div class="mb-3 text-muted">No comment</div>
+                        }
+
+                        <div class="mt-auto d-flex align-items-center gap-3">
+                            <div class="th-avatar">@name.Substring(0, 1).ToUpper()</div>
+                            <div>
+                                <div class="fw-semibold">@name</div>
+                                <div class="small text-muted">@r.CreatedAt.ToString("dd/MM/yyyy")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</section>
+
+

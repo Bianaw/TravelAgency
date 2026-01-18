@@ -1,0 +1,151 @@
+﻿@model IEnumerable<TravelAgencyService.Models.Booking>
+
+@{
+    ViewData["Title"] = "My Bookings";
+    int cancelDays = ViewBag.CancelDays ?? 5;
+}
+
+<h2>My Bookings</h2>
+
+@if (TempData["Msg"] != null)
+{
+    <div class="alert alert-info">@TempData["Msg"]</div>
+}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Trip</th>
+            <th>Dates</th>
+            <th>Remaining</th>
+            <th>Status</th>
+            <th>Rooms</th>
+            <th>Price</th>
+            <th>Paid</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        @foreach (var b in Model)
+        {
+            var startDate = b.TravelPackage?.StartDate.Date;
+            var endDate = b.TravelPackage?.EndDate.Date;
+
+            var isUpcoming = startDate.HasValue && startDate.Value > DateTime.Today;
+            var daysToStart = isUpcoming ? (startDate.Value - DateTime.Today).Days : 0;
+
+            var canCancel =
+            (b.Status != TravelAgencyService.Models.BookingStatus.Cancelled)
+            && isUpcoming
+            && daysToStart >= cancelDays;
+
+            <tr>
+                <td>@b.TravelPackage?.Destination (@b.TravelPackage?.Country)</td>
+
+                <td>
+                    @b.TravelPackage?.StartDate.ToString("dd/MM/yyyy")
+                    -
+                    @b.TravelPackage?.EndDate.ToString("dd/MM/yyyy")
+                </td>
+
+                <td>
+                    @if (isUpcoming)
+                    {
+                        <span>@daysToStart day(s)</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">—</span>
+                    }
+                </td>
+
+                <td>@b.Status</td>
+
+                <td>@b.RoomsCount</td>
+
+                <td>@((b.PriceAtBooking * b.RoomsCount).ToString("0.00")) ₪</td>
+
+                <td>
+                    @if (b.Status == TravelAgencyService.Models.BookingStatus.Paid)
+                    {
+                        <span>@(b.PaidAmount.HasValue ? b.PaidAmount.Value.ToString("0.00") + " ₪" : "-")</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Not paid</span>
+                    }
+                </td>
+
+                <td class="d-flex gap-2 align-items-center">
+                    @if (b.Status == TravelAgencyService.Models.BookingStatus.PendingPayment)
+                    {
+                        <a class="btn btn-primary btn-sm"
+                        asp-controller="Bookings"
+                        asp-action="ConfirmPayment"
+                        asp-route-id="@b.Id">
+                            Pay
+                        </a>
+                    }
+
+                    @if (b.Status == TravelAgencyService.Models.BookingStatus.Paid && isUpcoming)
+                    {
+                        <a class="btn btn-outline-primary btn-sm"
+                        asp-controller="Bookings"
+                        asp-action="Itinerary"
+                        asp-route-id="@b.Id">
+                            Download Itinerary (PDF)
+                        </a>
+                    }
+                    @if (b.Status == TravelAgencyService.Models.BookingStatus.Paid
+              && b.Status != TravelAgencyService.Models.BookingStatus.Cancelled
+              && isUpcoming)
+                    {
+                        <a class="btn btn-success btn-sm"
+                        asp-controller="TravelPackages"
+                        asp-action="Details"
+                        asp-route-id="@b.TravelPackageId"
+                        asp-fragment="rate">
+                            Rate Trip
+                        </a>
+                    }
+
+                    @if (b.Status != TravelAgencyService.Models.BookingStatus.Cancelled)
+                    {
+                        if (canCancel)
+                        {
+                            <form asp-controller="Bookings"
+                                  asp-action="Cancel"
+                                  method="post"
+                                  class="m-0"
+                                  onsubmit="return confirm('Cancel this booking?');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@b.Id" />
+                                <button class="btn btn-danger btn-sm" type="submit">Cancel</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <span class="text-muted">
+                                Cancellation closed (must be at least @cancelDays days before start)
+                            </span>
+                        }
+                    }
+                    else
+                    {
+                        <form asp-controller="Bookings"
+                              asp-action="Delete"
+                              method="post"
+                              class="m-0"
+                              onsubmit="return confirm('Delete this cancelled booking permanently?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@b.Id" />
+                            <button class="btn btn-outline-danger btn-sm" type="submit">Delete</button>
+                        </form>
+                    }
+
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

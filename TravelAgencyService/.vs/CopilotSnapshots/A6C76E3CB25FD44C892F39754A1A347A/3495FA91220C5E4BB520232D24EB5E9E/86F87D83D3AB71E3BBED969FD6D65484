@@ -1,0 +1,260 @@
+﻿@model IEnumerable<TravelAgencyService.Models.TravelPackage>
+
+@using TravelAgencyService.Models
+@using System.Globalization
+
+@{
+    ViewData["Title"] = "Trips";
+    var il = CultureInfo.GetCultureInfo("he-IL");
+
+    var avgRatings = ViewBag.AvgRatings as Dictionary<int, double> ?? new();
+    var reviewCounts = ViewBag.ReviewCounts as Dictionary<int, int> ?? new();
+
+    var sortVal = (ViewBag.Sort as string) ?? "";
+    bool onSaleChecked = (ViewBag.OnSale as bool?) == true;
+
+    int resultsCount = Model?.Count() ?? 0;
+}
+
+<div class="d-flex align-items-end justify-content-between mb-3">
+    <div>
+        <h1 class="th-page-title mb-1">Trips</h1>
+        <div class="text-muted">Showing @resultsCount result(s)</div>
+    </div>
+
+    @if (User.IsInRole("Admin"))
+    {
+        <a class="btn btn-primary th-btn-lg" asp-action="Create">+ Create New</a>
+    }
+</div>
+
+<div class="row g-4">
+    <!-- ✅ Filters sidebar -->
+    <div class="col-lg-3">
+        <div class="card th-filter-card p-4">
+            <h5 class="mb-3">Filter Trips</h5>
+
+            <form method="get" asp-action="Index" class="th-filter-form">
+                <div class="mb-3">
+                    <label class="form-label">Search</label>
+                    <input type="text" name="search" class="form-control"
+                           value="@(ViewBag.Search ?? "")"
+                           placeholder="Destination / Country / Keywords" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Package type</label>
+                    <select name="type" class="form-select">
+                        @if (ViewBag.Type == null || string.IsNullOrEmpty(ViewBag.Type.ToString()))
+                        {
+                            <option value="" selected>All types</option>
+                        }
+                        else
+                        {
+                            <option value="">All types</option>
+                        }
+
+                        @foreach (var t in Enum.GetValues(typeof(PackageType)).Cast<PackageType>())
+                        {
+                            if (ViewBag.Type != null && ViewBag.Type.ToString() == t.ToString())
+                            {
+                                <option value="@t" selected>@t</option>
+                            }
+                            else
+                            {
+                                <option value="@t">@t</option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Start date</label>
+                    <input type="date" name="start" class="form-control" value="@(ViewBag.Start ?? "")" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">End date</label>
+                    <input type="date" name="end" class="form-control" value="@(ViewBag.End ?? "")" />
+                </div>
+
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <label class="form-label">Min price</label>
+                        <input type="number" name="minPrice" step="1" class="form-control" value="@(ViewBag.MinPrice ?? "")" />
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Max price</label>
+                        <input type="number" name="maxPrice" step="1" class="form-control" value="@(ViewBag.MaxPrice ?? "")" />
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Sort</label>
+                    <select name="sort" class="form-select">
+                        @if (string.IsNullOrEmpty(sortVal))
+                        {
+                            <option value="" selected>Default</option>
+                        }
+                        else
+                        {
+                            <option value="">Default</option>
+                        }
+
+                        <option value="price_asc" selected="@(sortVal == "price_asc")">Price: Low → High</option>
+                        <option value="price_desc" selected="@(sortVal == "price_desc")">Price: High → Low</option>
+                        <option value="date_asc" selected="@(sortVal == "date_asc")">Start date: Soonest</option>
+                        <option value="date_desc" selected="@(sortVal == "date_desc")">Start date: Latest</option>
+                        <option value="type" selected="@(sortVal == "type")">Category</option>
+                        <option value="popular" selected="@(sortVal == "popular")">Most popular</option>
+                    </select>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" name="onSale" value="true" id="onSale" @(onSaleChecked ? "checked" : "") />
+                    <label class="form-check-label" for="onSale">Only discounted</label>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-primary th-btn-lg">Apply</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ✅ Results grid -->
+    <div class="col-lg-9">
+        @if (resultsCount == 0)
+        {
+            <div class="alert alert-light border th-empty">
+                <div class="fw-bold mb-1">No trips match your filters</div>
+                <div class="text-muted">Try resetting filters or changing search terms.</div>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var item in Model)
+                {
+                    var now = DateTime.Today;
+
+                    bool discountActive =
+                    item.OldPrice.HasValue &&
+                    item.DiscountStart.HasValue &&
+                    item.DiscountEnd.HasValue &&
+                    now >= item.DiscountStart.Value.Date &&
+                    now <= item.DiscountEnd.Value.Date;
+
+                    var avg = avgRatings.TryGetValue(item.Id, out var a) ? a : 0.0;
+                    var cnt = reviewCounts.TryGetValue(item.Id, out var c) ? c : 0;
+
+                    <div class="col-md-6 col-xl-4">
+                        <div class="card th-package-card h-100">
+                            <div class="th-package-img">
+                                @if (!string.IsNullOrEmpty(item.Image))
+                                {
+                                    <img src="~/images/packages/@item.Image" alt="@item.Destination" />
+                                }
+                                else
+                                {
+                                    <div class="th-img-fallback">
+                                        <span>No image</span>
+                                    </div>
+                                }
+
+                                @if (discountActive)
+                                {
+                                    <span class="badge th-badge-sale">Sale</span>
+                                }
+                            </div>
+
+                            <div class="card-body d-flex flex-column">
+                                <div class="d-flex justify-content-between align-items-start gap-2">
+                                    <div>
+                                        <h5 class="mb-1">@item.Destination</h5>
+                                        <div class="text-muted small">@item.Country</div>
+                                    </div>
+                                    <span class="badge th-type">@item.PackageType</span>
+                                </div>
+
+                                <div class="th-meta mt-3">
+                                    <div class="th-meta-row">
+                                        <span class="text-muted">Dates</span>
+                                        <span class="fw-semibold">@item.StartDate.ToString("dd/MM/yyyy") - @item.EndDate.ToString("dd/MM/yyyy")</span>
+                                    </div>
+                                    <div class="th-meta-row">
+                                        <span class="text-muted">Rooms</span>
+                                        <span class="fw-semibold">@item.AvailableRooms</span>
+                                    </div>
+                                    <div class="th-meta-row">
+                                        <span class="text-muted">Age limit</span>
+                                        <span class="fw-semibold">@item.AgeLimit</span>
+                                    </div>
+                                </div>
+
+                                <div class="mt-3">
+                                    @if (discountActive)
+                                    {
+                                        <div class="th-price">
+                                            @item.Price.ToString("C", il)
+                                            <span class="th-old">@item.OldPrice.Value.ToString("C", il)</span>
+                                        </div>
+                                        <div class="text-muted small">per person</div>
+                                    }
+                                    else
+                                    {
+                                        <div class="th-price">@item.Price.ToString("C", il)</div>
+                                        <div class="text-muted small">per person</div>
+                                    }
+                                </div>
+
+                                <div class="mt-3">
+                                    @if (cnt == 0)
+                                    {
+                                        <span class="text-muted small">No reviews</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="fw-semibold">@avg.ToString("0.0") ★</span>
+                                        <small class="text-muted">(@cnt)</small>
+                                    }
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(item.Description))
+                                {
+                                    <div class="th-desc mt-3 text-muted">
+                                        @item.Description
+                                    </div>
+                                }
+
+                                <div class="mt-auto pt-3 d-flex gap-2">
+                                    <a class="btn btn-outline-primary w-50"
+                                       asp-action="Details" asp-route-id="@item.Id">Details</a>
+
+                                    <button type="button"
+                                            class="btn btn-primary w-50"
+                                            data-rooms-action="reserve"
+                                            data-package-id="@item.Id">
+                                        Book
+                                    </button>
+
+                                </div>
+
+
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <div class="mt-3 d-flex gap-2 small">
+                                        <a class="link-secondary" asp-action="Edit" asp-route-id="@item.Id">Edit</a>
+                                        <span class="text-muted">|</span>
+                                        <a class="link-secondary" asp-action="Delete" asp-route-id="@item.Id">Delete</a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>

@@ -1,0 +1,86 @@
+﻿@model IEnumerable<TravelAgencyService.Models.WaitingListEntry>
+
+@{
+    ViewData["Title"] = "Waiting List";
+}
+
+<h1>Waiting List</h1>
+
+@if (TempData["WaitMsg"] != null)
+{
+    <div class="alert alert-info">@TempData["WaitMsg"]</div>
+}
+
+@foreach (var group in Model.GroupBy(x => x.TravelPackageId))
+{
+    var first = group.FirstOrDefault();
+
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <strong>@first?.TravelPackage?.Destination</strong>
+                (@first?.TravelPackage?.Country)
+                <span class="text-muted">| PackageId: @group.Key</span>
+                <span class="badge bg-secondary ms-2">Waiting: @group.Count(x => !x.Notified)</span>
+            </div>
+
+            <form asp-action="NotifyNext" method="post" class="m-0">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="packageId" value="@group.Key" />
+                <button class="btn btn-primary btn-sm" type="submit">Notify Next</button>
+            </form>
+        </div>
+
+        <div class="card-body p-0">
+            <table class="table table-striped m-0">
+                <thead>
+                    <tr>
+                        <th>Email</th>
+                        <th>Created At</th>
+                        <th>Notified</th>
+                        <th>Position</th>
+                        <th style="width:180px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        var posDict = ViewBag.Positions as Dictionary<int, int>;
+                    }
+                    @foreach (var w in group.OrderBy(x => x.Notified).ThenBy(x => x.CreatedAt).ThenBy(x => x.Id))
+                    {
+                        var hasPos = posDict != null && posDict.ContainsKey(w.Id);
+
+                        <tr>
+                            <td>@w.Email</td>
+                            <td>@w.CreatedAt</td>
+                            <td>@w.Notified</td>
+
+                            <td>
+                                @if (!w.Notified && hasPos)
+                                {
+                                    <span>@posDict![w.Id]</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+
+                            <td>
+                                @if (!w.Notified)
+                                {
+                                    <form asp-action="MarkNotified" method="post" class="m-0">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@w.Id" />
+                                        <button class="btn btn-success btn-sm" type="submit">Mark Notified</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+}

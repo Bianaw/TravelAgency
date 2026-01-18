@@ -1,0 +1,173 @@
+﻿@model TravelAgencyService.Models.TravelPackage
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+@if (TempData.Peek("ImgMsg") != null)
+{
+    <div class="alert alert-info">@TempData.Peek("ImgMsg")</div>
+}
+
+
+<h4>TravelPackage</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form id="editForm" asp-action="Edit" enctype="multipart/form-data">
+            <div asp-validation-summary="All" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <div class="form-group">
+                <label asp-for="Destination" class="control-label"></label>
+                <input asp-for="Destination" class="form-control" />
+                <span asp-validation-for="Destination" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Country" class="control-label"></label>
+                <input asp-for="Country" class="form-control" />
+                <span asp-validation-for="Country" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="StartDate" class="control-label"></label>
+                <input asp-for="StartDate" class="form-control" />
+                <span asp-validation-for="StartDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="EndDate" class="control-label"></label>
+                <input asp-for="EndDate" class="form-control" />
+                <span asp-validation-for="EndDate" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Price" class="control-label"></label>
+                <input asp-for="Price" class="form-control" />
+                <span asp-validation-for="Price" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="AvailableRooms" class="control-label"></label>
+                <input asp-for="AvailableRooms" class="form-control" />
+                <span asp-validation-for="AvailableRooms" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PackageType" class="control-label"></label>
+                <select asp-for="PackageType" class="form-control"
+                        asp-items="Html.GetEnumSelectList<TravelAgencyService.Models.PackageType>()">
+                    <option value="">-- Select package type --</option>
+                </select>
+                <span asp-validation-for="PackageType" class="text-danger"></span>
+            </div>
+
+
+            <div class="form-group">
+                <label asp-for="AgeLimit" class="control-label"></label>
+                <input asp-for="AgeLimit" class="form-control" />
+                <span asp-validation-for="AgeLimit" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label>Current Image</label><br />
+                @if (!string.IsNullOrEmpty(Model.Image))
+                {
+                    <img src="~/images/packages/@Model.Image" style="max-height:120px" />
+                }
+            </div>
+
+            <div class="form-group">
+                <label>New Image (optional)</label>
+                <input type="file" name="imageFile" class="form-control" />
+            </div>
+
+           
+            <div class="form-group">
+                <label asp-for="OldPrice" class="control-label"></label>
+                <input asp-for="OldPrice" class="form-control" />
+                <span asp-validation-for="OldPrice" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DiscountStart" class="control-label"></label>
+                <input asp-for="DiscountStart" class="form-control" />
+                <span asp-validation-for="DiscountStart" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="DiscountEnd" class="control-label"></label>
+                <input asp-for="DiscountEnd" class="form-control" />
+                <span asp-validation-for="DiscountEnd" class="text-danger"></span>
+            </div>
+
+            <div class="form-group form-check">
+                <input asp-for="IsVisible" class="form-check-input" />
+                <label asp-for="IsVisible" class="form-check-label"></label>
+            </div>
+
+
+        </form>
+    </div>
+</div>
+<form asp-controller="TravelPackageImages" asp-action="Add" method="post"
+      enctype="multipart/form-data"
+      class="row g-2 align-items-center">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="travelPackageId" value="@Model.Id" />
+
+    <div class="col-md-8">
+        <input type="file"
+               name="file"
+               class="form-control"
+               accept="image/*">
+    </div>
+
+    <div class="col-md-4">
+        <button class="btn btn-primary w-100" type="submit">Add Image</button>
+    </div>
+    
+</form>
+<br />
+
+@if (Model.Images != null && Model.Images.Any())
+{
+    <div class="d-flex flex-wrap gap-3">
+        @foreach (var img in Model.Images)
+        {
+            <div class="card" style="width: 220px;">
+                <img src="@img.Url" class="card-img-top" style="height:140px; object-fit:cover;" />
+
+                <div class="card-body p-2">
+                    <form asp-controller="TravelPackageImages" asp-action="Delete" method="post" class="m-0">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@img.Id" />
+                        <button class="btn btn-danger btn-sm w-100" type="submit">Delete</button>
+                    </form>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p class="text-muted">No images yet.</p>
+}
+
+<button type="submit" class="btn btn-primary" form="editForm">Save</button>
+
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+
+<script>
+    setTimeout(() => {
+      document.querySelectorAll(".alert").forEach(a => a.remove());
+    }, 3000);
+</script>

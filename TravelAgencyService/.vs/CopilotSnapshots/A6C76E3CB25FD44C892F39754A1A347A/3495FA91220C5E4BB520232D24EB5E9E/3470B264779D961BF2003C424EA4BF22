@@ -1,0 +1,60 @@
+﻿@model List<TravelAgencyService.Models.CartItem>
+@using System.Globalization
+@{
+    ViewData["Title"] = "Cart";
+    var il = CultureInfo.GetCultureInfo("he-IL");
+}
+
+<h2>Shopping Cart</h2>
+
+@if (TempData["Msg"] != null)
+{
+    <div class="alert alert-info">@TempData["Msg"]</div>
+}
+
+@if (Model.Count == 0)
+{
+    <div class="alert alert-secondary">Your cart is empty.</div>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Trip</th>
+                <th>Dates</th>
+                <th>Price</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.TravelPackage?.Destination (@item.TravelPackage?.Country)</td>
+                    <td>@item.TravelPackage?.StartDate.ToString("dd/MM/yyyy") - @item.TravelPackage?.EndDate.ToString("dd/MM/yyyy")</td>
+                    <td>@(item.TravelPackage?.Price.ToString("C", il))</td>
+                    <td>
+                        <form asp-action="Remove" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button class="btn btn-outline-danger btn-sm">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="d-flex gap-2">
+        <form asp-action="Clear" method="post">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-outline-secondary">Clear</button>
+        </form>
+
+        <form asp-action="Checkout" method="post">
+            @Html.AntiForgeryToken()
+            <button class="btn btn-primary">Checkout</button>
+        </form>
+    </div>
+}
