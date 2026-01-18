@@ -23,5 +23,10 @@ Setup Instructions:
      1-Clone the repository
      2-Open the project in Visual Studio
      3-Configure the database connection in appsettings.json
-     4-Run database migrations: Update-Database
+     4- database:
+         4.1-Option A:Run database migrations: Update-Database  
+         4.2-Option B – SQL Script: 
+                              1- Open SQL Server Management Studio (or SQL Server Object Explorer).
+                              2-Create a new empty database.
+                              3-Run the SQL script located in the repository (script.txt) to create all require tables.
      5-Run the project
